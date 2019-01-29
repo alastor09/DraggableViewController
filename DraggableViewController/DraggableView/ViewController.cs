@@ -29,8 +29,8 @@ namespace DraggableView
             NextViewController.TransitioningDelegate = this;
             NextViewController.ModalPresentationStyle = UIModalPresentationStyle.FullScreen;
 
-            this.PresentInteractor = new MiniToLargeViewInteractive(this, NextViewController, BottomView);
-            this.DismissInteractor = new MiniToLargeViewInteractive(NextViewController, null, NextViewController.View);
+            this.PresentInteractor = MiniToLargeViewInteractive.CreateInteractiveForPresentation(this, NextViewController, BottomView);
+            this.DismissInteractor = MiniToLargeViewInteractive.CreateInteractiveForDismissal(NextViewController);
         }
 
         public void TransitionViewBack()
