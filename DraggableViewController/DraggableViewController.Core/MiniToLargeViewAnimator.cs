@@ -8,53 +8,59 @@ namespace DraggableViewController.Core
     {
         static double AnimationDuration = .4f;
 
-        UIView FakeView { get; }
+        UIImage FakeImage { get; }
 
         internal double InitialY { get; private set; }
 
-        public MiniToLargeViewAnimator(UIView fakeView, double initialY)
+        public MiniToLargeViewAnimator(double initialY, ModalAnimatedTransitioningType transitionType, UIView bottomView) : base(transitionType)
         {
-            this.FakeView = fakeView;
             this.InitialY = initialY;
+            FakeImage = SnapshotImage(bottomView);
         }
 
-        double TransitionDuration(UIViewControllerContextTransitioning transitioningContext)
+        UIImage SnapshotImage(UIView fakeView)
+        {
+            var renderer = new UIGraphicsImageRenderer(fakeView.Bounds, format: UIGraphicsImageRendererFormat.DefaultFormat);
+            return renderer.CreateImage(arg => fakeView.Layer.RenderInContext(arg.CGContext));
+        }
+
+        public override double TransitionDuration(IUIViewControllerContextTransitioning transitionContext)
             => AnimationDuration;
 
-        internal override void AnimateDismissingInContext(UIViewControllerContextTransitioning transitioningContext, UIViewController toVC, UIViewController fromVC)
+        internal override void AnimateDismissingInContext(IUIViewControllerContextTransitioning transitioningContext, UIViewController fromVC, UIViewController toVC)
         {
             var fromVCrect = transitioningContext.GetInitialFrameForViewController(fromVC);
             fromVCrect.Y = (nfloat)(fromVCrect.Size.Height - this.InitialY);
 
-            UIView imageView = this.FakeView;
+            UIView imageView = new UIImageView(FakeImage);
+            imageView.Alpha = 0.0f;
             fromVC.View.AddSubview(imageView);
 
             UIView container = transitioningContext.ContainerView;
             container.AddSubview(toVC.View);
             container.AddSubview(fromVC.View);
-            imageView.Alpha = 0.0f;
 
-            UIView.Animate(AnimationDuration, () =>
+            UIView.Animate(AnimationDuration, (Action)(() =>
                             {
                                 fromVC.View.Frame = fromVCrect;
                                 imageView.Alpha = 1.0f;
-                            },
-                            () =>
+                            }),
+(Action)(() =>
                             {
                                 imageView.RemoveFromSuperview();
                                 if (transitioningContext.TransitionWasCancelled)
                                 {
                                     transitioningContext.CompleteTransition(false);
-                                    toVC.View.RemoveFromSuperview();
+                                    fromVC.View.RemoveFromSuperview();
                                 }
                                 else
                                 {
                                     transitioningContext.CompleteTransition(true);
                                 }
-                            });
+                            }));
         }
 
-        internal override void AnimatePresentingInContext(UIViewControllerContextTransitioning transitioningContext, UIViewController toVC, UIViewController fromVC)
+        internal override void AnimatePresentingInContext(IUIViewControllerContextTransitioning transitioningContext, UIViewController fromVC, UIViewController toVC)
         {
             CGRect fromVCrect = transitioningContext.GetInitialFrameForViewController(fromVC);
             CGRect toVCRect = fromVCrect;
@@ -62,7 +68,7 @@ namespace DraggableViewController.Core
 
             toVC.View.Frame = toVCRect;
             UIView container = transitioningContext.ContainerView;
-            UIView imageView = this.FakeView;
+            UIView imageView = new UIImageView(FakeImage);
             toVC.View.AddSubview(imageView);
 
             container.AddSubview(fromVC.View);

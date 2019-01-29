@@ -8,23 +8,30 @@ namespace DraggableViewController.Core
         ModalAnimatedTransitioningTypeDismiss = 1
     }
 
-    public abstract class BaseAnimator
+    public abstract class BaseAnimator : UIViewControllerAnimatedTransitioning
     {
-        public ModalAnimatedTransitioningType TransitioningType { get; set; }
-
-        internal abstract void AnimatePresentingInContext(UIViewControllerContextTransitioning transitioningContext, UIViewController destinationViewController, UIViewController startingViewController);
-        internal abstract void AnimateDismissingInContext(UIViewControllerContextTransitioning transitioningContext, UIViewController destinationViewController, UIViewController startingViewController);
-
-        void AnimateTransition(UIViewControllerContextTransitioning transitioningContext)
+        protected BaseAnimator(ModalAnimatedTransitioningType transitioningType)
         {
-            UIViewController to = transitioningContext.GetViewControllerForKey(UITransitionContext.ToViewControllerKey);
-            UIViewController from = transitioningContext.GetViewControllerForKey(UITransitionContext.FromViewControllerKey);
+            TransitioningType = transitioningType;
+        }
+
+        public ModalAnimatedTransitioningType TransitioningType { get; }
+
+        internal abstract void AnimatePresentingInContext(IUIViewControllerContextTransitioning transitioningContext, UIViewController fromVC, UIViewController toVC);
+        internal abstract void AnimateDismissingInContext(IUIViewControllerContextTransitioning transitioningContext, UIViewController fromVC, UIViewController toVC);
+
+        public override void AnimateTransition(IUIViewControllerContextTransitioning transitionContext)
+        {
+            UIViewController toVC = transitionContext.GetViewControllerForKey(UITransitionContext.ToViewControllerKey);
+            UIViewController fromVC = transitionContext.GetViewControllerForKey(UITransitionContext.FromViewControllerKey);
 
             switch (TransitioningType)
             {
                 case ModalAnimatedTransitioningType.ModalAnimatedTransitioningTypeDismiss:
+                    this.AnimateDismissingInContext(transitionContext, fromVC, toVC);
                     break;
                 case ModalAnimatedTransitioningType.ModalAnimatedTransitioningTypePresent:
+                    this.AnimatePresentingInContext(transitionContext, fromVC, toVC);
                     break;
                 default:
                     break;

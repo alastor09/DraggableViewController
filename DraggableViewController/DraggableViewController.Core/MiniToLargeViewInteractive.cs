@@ -20,32 +20,45 @@ namespace DraggableViewController.Core
         void OnPan(UIPanGestureRecognizer panGestureRecognizer)
         {
             var translation = panGestureRecognizer.TranslationInView(panGestureRecognizer.View.Superview);
+            double ScreenHeight = UIScreen.MainScreen.Bounds.Size.Height - 50.0f;
+            double DragAmount = this.PresentViewController != null ? -ScreenHeight : ScreenHeight;
+            double Threshold = 0.3;
+            //Represents the difference between progress that is required to trigger the completion of the transition.
+            double automaticOverrideThreshold = 0.03;
+
+            double percent = translation.Y / DragAmount;
+            percent = Math.Max(percent, 0.0f);
+            percent = Math.Min(percent, 1.0f);
 
             switch (panGestureRecognizer.State)
             {
                 case UIGestureRecognizerState.Began:
                     {
-                        if (this.PresentViewController == null)
+                        if (this.PresentViewController != null)
                         {
-                            this.ViewController.DismissViewController(true, null);
+                            this.ViewController.PresentViewController(this.PresentViewController, true, null);
                         }
                         else
                         {
-                            this.ViewController.PresentViewController(this.PresentViewController, true, null);
+                            this.ViewController.DismissViewController(true, null);
                         }
                     }
                     break;
                 case UIGestureRecognizerState.Changed:
                     {
-                        double ScreenHeight = UIScreen.MainScreen.Bounds.Size.Height - 50.0f;
-                        double DragAmount = this.PresentViewController == null ? ScreenHeight : -ScreenHeight;
-                        double Threshold = 0.3;
-
-                        double percent = translation.Y / DragAmount;
-                        percent = Math.Max(percent, 0.0f);
-                        percent = Math.Min(percent, 1.0f);
+                        if (LastProgress > percent)
+                        {
+                            this.ShouldComplete = false;
+                        }
+                        else if(percent > LastProgress + automaticOverrideThreshold)
+                        {
+                            this.ShouldComplete = true;
+                        }
+                        else
+                        {
+                            this.ShouldComplete = percent > Threshold;
+                        }
                         this.UpdateInteractiveTransition((nfloat)percent);
-                        this.ShouldComplete = percent > Threshold;
                     }
                     break;
                 case UIGestureRecognizerState.Ended:
@@ -62,11 +75,13 @@ namespace DraggableViewController.Core
                     }
                     break;
             }
+            LastProgress = percent;
         }
 
         double CompletitionSpeed
             => 1.0 - this.PercentComplete;
 
+        double LastProgress;
         bool ShouldComplete;
     }
 }
