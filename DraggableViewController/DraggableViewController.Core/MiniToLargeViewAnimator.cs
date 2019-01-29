@@ -8,50 +8,56 @@ namespace DraggableViewController.Core
     {
         static double AnimationDuration = .4f;
 
-        UIImage FakeImage { get; }
+        UIImage DummyImage { get; }
 
         internal double InitialY { get; private set; }
 
-        public MiniToLargeViewAnimator(double initialY, ModalAnimatedTransitioningType transitionType, UIView bottomView) : base(transitionType)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:DraggableViewController.Core.MiniToLargeViewAnimator"/> class.
+        /// </summary>
+        /// <param name="initialY">Starting Y Position of introductoryView</param>
+        /// <param name="transitionType">Type Of Transition</param>
+        /// <param name="introductoryView">View which is Displayed as a Introduction</param>
+        public MiniToLargeViewAnimator(double initialY, ModalAnimatedTransitioningType transitionType, UIView introductoryView) : base(transitionType)
         {
             this.InitialY = initialY;
-            FakeImage = SnapshotImage(bottomView);
+            DummyImage = CreateImageFromView(introductoryView);
         }
 
-        UIImage SnapshotImage(UIView fakeView)
+        UIImage CreateImageFromView(UIView briefView)
         {
-            var renderer = new UIGraphicsImageRenderer(fakeView.Bounds, format: UIGraphicsImageRendererFormat.DefaultFormat);
-            return renderer.CreateImage(arg => fakeView.Layer.RenderInContext(arg.CGContext));
+            var renderer = new UIGraphicsImageRenderer(briefView.Bounds, format: UIGraphicsImageRendererFormat.DefaultFormat);
+            return renderer.CreateImage(arg => briefView.Layer.RenderInContext(arg.CGContext));
         }
 
         public override double TransitionDuration(IUIViewControllerContextTransitioning transitionContext)
             => AnimationDuration;
 
-        internal override void AnimateDismissingInContext(IUIViewControllerContextTransitioning transitioningContext, UIViewController fromVC, UIViewController toVC)
+        protected override void AnimateDismissingInContext(IUIViewControllerContextTransitioning transitioningContext, UIViewController originatingController, UIViewController destinationController)
         {
-            var fromVCrect = transitioningContext.GetInitialFrameForViewController(fromVC);
+            var fromVCrect = transitioningContext.GetInitialFrameForViewController(originatingController);
             fromVCrect.Y = (nfloat)(fromVCrect.Size.Height - this.InitialY);
 
-            UIView imageView = new UIImageView(FakeImage);
+            UIView imageView = new UIImageView(DummyImage);
             imageView.Alpha = 0.0f;
-            fromVC.View.AddSubview(imageView);
+            originatingController.View.AddSubview(imageView);
 
             UIView container = transitioningContext.ContainerView;
-            container.AddSubview(toVC.View);
-            container.AddSubview(fromVC.View);
+            container.AddSubview(destinationController.View);
+            container.AddSubview(originatingController.View);
 
-            UIView.Animate(AnimationDuration, (Action)(() =>
+            UIView.Animate(AnimationDuration, (() =>
                             {
-                                fromVC.View.Frame = fromVCrect;
+                                originatingController.View.Frame = fromVCrect;
                                 imageView.Alpha = 1.0f;
                             }),
-(Action)(() =>
+                            (() =>
                             {
                                 imageView.RemoveFromSuperview();
                                 if (transitioningContext.TransitionWasCancelled)
                                 {
                                     transitioningContext.CompleteTransition(false);
-                                    fromVC.View.RemoveFromSuperview();
+                                    originatingController.View.RemoveFromSuperview();
                                 }
                                 else
                                 {
@@ -60,23 +66,23 @@ namespace DraggableViewController.Core
                             }));
         }
 
-        internal override void AnimatePresentingInContext(IUIViewControllerContextTransitioning transitioningContext, UIViewController fromVC, UIViewController toVC)
+        protected override void AnimatePresentingInContext(IUIViewControllerContextTransitioning transitioningContext, UIViewController originatingController, UIViewController destinationController)
         {
-            CGRect fromVCrect = transitioningContext.GetInitialFrameForViewController(fromVC);
+            CGRect fromVCrect = transitioningContext.GetInitialFrameForViewController(originatingController);
             CGRect toVCRect = fromVCrect;
             toVCRect.Y = (nfloat)(toVCRect.Size.Height - this.InitialY);
 
-            toVC.View.Frame = toVCRect;
+            destinationController.View.Frame = toVCRect;
             UIView container = transitioningContext.ContainerView;
-            UIView imageView = new UIImageView(FakeImage);
-            toVC.View.AddSubview(imageView);
+            UIView imageView = new UIImageView(DummyImage);
+            destinationController.View.AddSubview(imageView);
 
-            container.AddSubview(fromVC.View);
-            container.AddSubview(toVC.View);
+            container.AddSubview(originatingController.View);
+            container.AddSubview(destinationController.View);
 
             UIView.Animate(AnimationDuration, () =>
             {
-                toVC.View.Frame = fromVCrect;
+                destinationController.View.Frame = fromVCrect;
                 imageView.Alpha = 0.0f;
             },
                             () =>

@@ -5,23 +5,23 @@ namespace DraggableViewController.Core
 {
     public class MiniToLargeViewInteractive : UIPercentDrivenInteractiveTransition
     {
-        readonly UIViewController ViewController;
-        readonly UIViewController PresentViewController;
+        readonly UIViewController CurrentViewController;
+        readonly UIViewController DestinationViewController;
         readonly UIPanGestureRecognizer Pan;
 
-        public MiniToLargeViewInteractive(UIViewController viewController, UIViewController presentViewController, UIView view)
+        public MiniToLargeViewInteractive(UIViewController currentViewcontroller, UIViewController destinationViewController, UIView gestureView)
         {
-            ViewController = viewController;
-            PresentViewController = presentViewController;
+            CurrentViewController = currentViewcontroller;
+            DestinationViewController = destinationViewController;
             Pan = new UIPanGestureRecognizer((UIPanGestureRecognizer obj) => OnPan(obj));
-            view.AddGestureRecognizer(Pan);
+            gestureView.AddGestureRecognizer(Pan);
         }
 
         void OnPan(UIPanGestureRecognizer panGestureRecognizer)
         {
             var translation = panGestureRecognizer.TranslationInView(panGestureRecognizer.View.Superview);
             double ScreenHeight = UIScreen.MainScreen.Bounds.Size.Height - 50.0f;
-            double DragAmount = this.PresentViewController != null ? -ScreenHeight : ScreenHeight;
+            double DragAmount = this.DestinationViewController != null ? -ScreenHeight : ScreenHeight;
             double Threshold = 0.3;
             //Represents the difference between progress that is required to trigger the completion of the transition.
             double automaticOverrideThreshold = 0.03;
@@ -34,13 +34,13 @@ namespace DraggableViewController.Core
             {
                 case UIGestureRecognizerState.Began:
                     {
-                        if (this.PresentViewController != null)
+                        if (this.DestinationViewController != null)
                         {
-                            this.ViewController.PresentViewController(this.PresentViewController, true, null);
+                            this.CurrentViewController.PresentViewController(this.DestinationViewController, true, null);
                         }
                         else
                         {
-                            this.ViewController.DismissViewController(true, null);
+                            this.CurrentViewController.DismissViewController(true, null);
                         }
                     }
                     break;

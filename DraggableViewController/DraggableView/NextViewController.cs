@@ -1,4 +1,5 @@
 ﻿using System;
+using DraggableViewController.Core;
 using Foundation;
 using UIKit;
 
@@ -6,7 +7,7 @@ namespace DraggableView
 {
     public partial class NextViewController : UIViewController
     {
-        public ViewController ParentController { get; set; }
+        public ITransitionHandler TransitionHandler { get; set; }
 
         protected NextViewController(IntPtr handle) : base(handle)
         {
@@ -21,8 +22,7 @@ namespace DraggableView
 
         partial void DonePressed(NSObject sender)
         {
-            ParentController.DisableInteractivePlayerTransitioning = true;
-            this.DismissViewController(true, () => this.ParentController.DisableInteractivePlayerTransitioning = false);
+            TransitionHandler.TransitionViewBack();
         }
     }
 }

@@ -5,11 +5,11 @@ using DraggableViewController.Core;
 
 namespace DraggableView
 {
-    public partial class ViewController : UIViewController, IUIViewControllerTransitioningDelegate
+    public partial class ViewController : UIViewController, IUIViewControllerTransitioningDelegate, ITransitionHandler
     {
-        public bool DisableInteractivePlayerTransitioning { get; set; }
-        public MiniToLargeViewInteractive PresentInteractor { get; private set; }
-        public MiniToLargeViewInteractive DismissInteractor { get; private set; }
+        public bool DisableInteractiveTransitioning;
+        MiniToLargeViewInteractive PresentInteractor;
+        MiniToLargeViewInteractive DismissInteractor;
         NextViewController NextViewController;
 
         protected ViewController(IntPtr handle) : base(handle)
@@ -25,7 +25,7 @@ namespace DraggableView
             BottomView.TranslatesAutoresizingMaskIntoConstraints = false;
 
             NextViewController = (NextViewController)this.Storyboard.InstantiateViewController(nameof(NextViewController));
-            NextViewController.ParentController = this;
+            NextViewController.TransitionHandler = this;
             NextViewController.TransitioningDelegate = this;
             NextViewController.ModalPresentationStyle = UIModalPresentationStyle.FullScreen;
 
@@ -33,10 +33,16 @@ namespace DraggableView
             this.DismissInteractor = new MiniToLargeViewInteractive(NextViewController, null, NextViewController.View);
         }
 
+        public void TransitionViewBack()
+        {
+            this.DisableInteractiveTransitioning = true;
+            this.DismissViewController(true, () => this.DisableInteractiveTransitioning = false);
+        }
+
         partial void DummyButtonTapped(NSObject sender)
         {
-            this.DisableInteractivePlayerTransitioning = true;
-            this.PresentViewController(NextViewController, true, () => { this.DisableInteractivePlayerTransitioning = false; });
+            this.DisableInteractiveTransitioning = true;
+            this.PresentViewController(NextViewController, true, () => { this.DisableInteractiveTransitioning = false; });
         }
 
         [Export("animationControllerForDismissedController:")]
@@ -54,13 +60,13 @@ namespace DraggableView
         [Export("interactionControllerForDismissal:")]
         public IUIViewControllerInteractiveTransitioning GetInteractionControllerForDismissal(IUIViewControllerAnimatedTransitioning animator)
         {
-            return this.DisableInteractivePlayerTransitioning? null: this.DismissInteractor;
+            return this.DisableInteractiveTransitioning? null: this.DismissInteractor;
         }
 
         [Export("interactionControllerForPresentation:")]
         public IUIViewControllerInteractiveTransitioning GetInteractionControllerForPresentation(IUIViewControllerAnimatedTransitioning animator)
         {
-            return this.DisableInteractivePlayerTransitioning ? null: this.PresentInteractor;
+            return this.DisableInteractiveTransitioning ? null: this.PresentInteractor;
         }
     }
 }
