@@ -57,7 +57,6 @@ namespace DraggableViewController.Core
                                 if (transitioningContext.TransitionWasCancelled)
                                 {
                                     transitioningContext.CompleteTransition(false);
-                                    originatingController.View.RemoveFromSuperview();
                                 }
                                 else
                                 {
